@@ -23,35 +23,26 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
           packages: 'platform-tools'
 
+      # This installs Gradle into the runner since gradlew is missing
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      # Build using the global 'gradle' command instead of './gradlew'
       - name: Build debug APK
-        run: |
-          # Find the directory containing gradlew
-          GRADLEW_PATH=$(find . -name "gradlew" -type f | head -n 1)
-          
-          if [ -z "$GRADLEW_PATH" ]; then
-            echo "Error: 'gradlew' file not found in the repository!"
-            exit 1
-          fi
-          
-          echo "Found gradlew at: $GRADLEW_PATH"
-          GRADLE_DIR=$(dirname "$GRADLEW_PATH")
-          cd "$GRADLE_DIR"
-          
-          chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace --no-daemon
+        run: gradle assembleDebug --stacktrace --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: FFAesExtractor-debug
-          # The '**/' allows it to find the APK whether it's in the root or a subfolder
           path: '**/build/outputs/apk/debug/*.apk'
           if-no-files-found: error
           retention-days: 30
